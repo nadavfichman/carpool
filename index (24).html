@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>הסעות לכדורגל</title>
+<meta name="theme-color" content="#1E6A3B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pitch:#1E6A3B; --pitch-2:#185632; --chalk:#FFFFFF; --ink:#15241A; --muted:#5B6B60;
+  --paper:#EEF3EC; --card:#FFFFFF; --line:#D5DFD3; --missing:#C97A12; --missing-bg:#FFF4E1;
+  --ok:#1E6A3B; --ok-bg:#E3F1E6; --danger:#B3261E;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --pitch:#1B5C34; --pitch-2:#154a2a; --ink:#E7EFE8; --muted:#9DB0A2;
+    --paper:#0F1712; --card:#18231C; --line:#2A3A2F; --missing:#F0B25A; --missing-bg:#33260F;
+    --ok:#7BD29A; --ok-bg:#1A3524; --danger:#F2867E;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --pitch:#1B5C34; --pitch-2:#154a2a; --ink:#E7EFE8; --muted:#9DB0A2;
+  --paper:#0F1712; --card:#18231C; --line:#2A3A2F; --missing:#F0B25A; --missing-bg:#33260F;
+  --ok:#7BD29A; --ok-bg:#1A3524; --danger:#F2867E;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Rubik",system-ui,"Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.45}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--missing);outline-offset:2px}
+
+header.top{
+  background:var(--pitch);color:var(--chalk);padding:18px 18px 22px;position:relative;overflow:hidden;
+}
+/* chalk centre-circle */
+header.top::after{content:"";position:absolute;width:220px;height:220px;border:2px solid rgba(255,255,255,.18);border-radius:50%;left:-70px;top:-40px;pointer-events:none}
+header.top::before{content:"";position:absolute;left:40px;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.18);pointer-events:none}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px}
+header .wrap{padding:0;position:relative;z-index:1}
+h1{margin:0;font-size:1.6rem;font-weight:800;letter-spacing:-.01em}
+.weeknav{display:flex;align-items:center;gap:10px;margin-top:14px}
+.weeknav button{background:rgba(255,255,255,.14);border:0;color:var(--chalk);width:40px;height:40px;border-radius:12px;font-size:1.2rem}
+.weeklabel{flex:1;text-align:center;font-weight:500;font-size:1.05rem}
+.weeklabel small{display:block;opacity:.75;font-weight:400;font-size:.85rem}
+
+.status{margin:-14px auto 0;position:relative;z-index:2}
+.statusbar{background:var(--card);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(0,0,0,.08);border:1px solid var(--line)}
+.statusbar .big{font-size:1.6rem;font-weight:800;min-width:2.2ch;text-align:center}
+.statusbar.missing .big{color:var(--missing)}
+.statusbar.done .big{color:var(--ok)}
+.statusbar .txt{flex:1;font-size:.95rem}
+.statusbar button{border:0;background:var(--missing);color:#1d1406;font-weight:700;border-radius:10px;padding:8px 12px}
+
+.me{display:flex;align-items:center;gap:8px;margin:16px 0 4px;font-size:.95rem;color:var(--muted);flex-wrap:wrap}
+.me select{padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card)}
+
+.fair{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
+.fair span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.85rem}
+.fair b{font-weight:700}
+
+.session{background:var(--card);border:1px solid var(--line);border-radius:18px;margin:14px 0;overflow:hidden;scroll-margin-top:20px}
+.session.flash{animation:flash 1.2s ease}
+@keyframes flash{0%{box-shadow:0 0 0 4px var(--missing)}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.session.flash{animation:none;box-shadow:0 0 0 3px var(--missing)}}
+.shead{display:flex;gap:12px;padding:12px 14px;align-items:flex-start}
+.day{background:var(--pitch);color:var(--chalk);border-radius:12px;min-width:58px;text-align:center;padding:6px 4px;line-height:1.15}
+.day b{display:block;font-size:1.05rem}
+.day small{font-size:.78rem;opacity:.85}
+.sinfo{flex:1;min-width:0}
+.stitle{font-weight:700;font-size:1.05rem}
+.snote{color:var(--muted);font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.del{background:none;border:0;color:var(--muted);font-size:1.1rem;padding:4px 6px;border-radius:8px}
+.legs{border-top:1px solid var(--line)}
+.leg{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.leg+.leg{border-top:1px dashed var(--line)}
+.leglabel{width:74px;font-size:.9rem;color:var(--muted);line-height:1.2}
+.leglabel b{display:block;color:var(--ink);font-size:1rem}
+.slot{flex:1;display:flex;gap:8px;align-items:center;min-width:0}
+.slot select{flex:1;min-width:0;padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:500}
+.slot.empty select{border:2px dashed var(--missing);background:var(--missing-bg);color:var(--missing);font-weight:700}
+.slot.filled select{background:var(--ok-bg);border-color:transparent;color:var(--ok)}
+.slot.mine select{border:2px solid var(--ok)}
+.take{border:0;background:var(--pitch);color:var(--chalk);border-radius:12px;padding:9px 12px;font-weight:700;white-space:nowrap}
+
+.empty-state{text-align:center;padding:30px 16px;color:var(--muted)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:18px 0}
+.panel h2{font-size:1.05rem;margin:0 0 8px}
+.panel p{margin:0 0 10px;color:var(--muted);font-size:.9rem}
+textarea,.panel input{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--paper)}
+textarea{min-height:120px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.row>*{flex:1 1 130px}
+.btn{border:0;background:var(--pitch);color:var(--chalk);border-radius:12px;padding:11px 14px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.6}
+.msg{font-size:.9rem;margin-top:8px;color:var(--muted)}
+.msg.err{color:var(--danger)}
+details.panel summary{font-weight:700;cursor:pointer}
+.famrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,7rem) 44px;gap:8px;margin-top:8px;align-items:center}
+.famrow input{min-width:0}
+.famrow .x{border:1px solid var(--line);background:transparent;color:var(--danger);border-radius:12px;height:44px;font-size:1.1rem}
+.ro{background:var(--missing-bg);color:var(--missing);border-radius:12px;padding:10px;margin-top:12px;font-size:.9rem;display:none}
+footer{height:40px}
+.share{display:flex;gap:8px;margin-top:12px}
+.share .wa{flex:1;border:0;border-radius:12px;padding:11px 14px;font-weight:700;background:#25D366;color:#0b2a17;text-align:center;text-decoration:none;display:block}
+.leg.flash{animation:flashleg 1.6s ease}
+@keyframes flashleg{0%,60%{background:var(--missing-bg);box-shadow:inset 0 0 0 3px var(--missing)}100%{background:transparent;box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.leg.flash{animation:none;background:var(--missing-bg)}}
+.share .btn{flex:0 0 auto}
+.session.past{opacity:.5}
+.session.past .slot.empty select{border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:500}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>הסעות לכדורגל ⚽</h1>
+    <div class="weeknav">
+      <button id="next" aria-label="השבוע הבא">›</button>
+      <div class="weeklabel" id="weeklabel"></div>
+      <button id="prev" aria-label="השבוע הקודם">‹</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="status"><div class="statusbar" id="statusbar"><div class="big" id="missingCount">–</div><div class="txt" id="statusTxt">טוען…</div><button id="jump" hidden>להשלים</button></div></div>
+  
+
+  <div class="share" id="share" hidden>
+    <a class="wa" id="waBtn" href="https://wa.me/" target="_blank" rel="noopener">שליחה לוואטסאפ</a>
+    <button class="btn ghost" id="copyBtn">העתקה</button>
+  </div>
+
+  <div class="me"><span>אני:</span><select id="meSel"></select><span id="meHint"></span></div>
+  <div class="fair" id="fair"></div>
+
+  <div id="list"></div>
+
+  <section class="panel" id="importPanel">
+    <h2>הודעה חדשה מהמאמן</h2>
+    <p>מדביקים את ההודעה כמו שהיא, והאימונים נכנסים לשבוע שמוצג למעלה.</p>
+    <textarea id="coachText" placeholder="שלום לכולם, לו״ז אימונים לשבוע הבא…"></textarea>
+    <div class="row"><button class="btn" id="parseBtn">להוסיף לשבוע</button></div>
+    <div class="msg" id="parseMsg"></div>
+  </section>
+
+  <details class="panel">
+    <summary>להוסיף אימון ידנית</summary>
+    <div class="row">
+      <input type="date" id="mDate" aria-label="תאריך">
+      <input type="time" id="mTime" aria-label="שעת הגעה">
+    </div>
+    <div class="row"><input id="mTitle" placeholder="למשל: אימון, מגרש אימונים"></div>
+    <div class="row"><input id="mNote" placeholder="הערה (לא חובה)"></div>
+    <div class="row"><button class="btn" id="addBtn">להוסיף</button></div>
+    <div class="msg" id="addMsg"></div>
+  </details>
+
+  <details class="panel" id="famPanel">
+    <summary>ההורים בהסעה</summary>
+    <p>מימין שם ההורה, משמאל שם המשפחה (לספירה לפי משפחות). ✕ מסיר מהרשימה.</p>
+    <div id="famList"></div>
+    <div class="row"><button class="btn ghost" id="famAdd">+ הוספת הורה</button><button class="btn" id="famSave">לשמור הורים</button></div>
+    <div class="msg" id="famMsg"></div>
+  </details>
+</main>
+<footer></footer>
+
+<script>
+// Parses the coach's WhatsApp schedule message into sessions for the week starting `sundayISO`.
+function parseCoach(text, weekDates){
+  const DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+  const strip=s=>s.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu,"").replace(/[*_~]/g,"").replace(/\s+/g," ").trim();
+  const T=/(\d{1,2}):(\d{2})/;
+  const hm=m=>String(+m[1]).padStart(2,"0")+":"+m[2];
+  const out=[]; let cur=null;
+  const finish=()=>{ if(cur){ cur.note=cur.notes.join(" · ").slice(0,60); delete cur.notes; out.push(cur); } };
+  for(const raw of text.split(/\r?\n/)){
+    const hasPin=/📍/.test(raw);
+    const line=strip(raw); if(!line) continue;
+    const dm=line.match(/יום\s+(ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)/);
+    if(dm){
+      finish();
+      const idx=DAYS.indexOf(dm[1]);
+      const tm=line.match(T);
+      let rest=line.replace(dm[0],"").replace(T,"").replace(/^[\s\-–:]+|[\s\-–:]+$/g,"").replace(/\s*[-–:]\s*/g," ").trim();
+      const isMatch=/משחק/.test(rest);
+      cur={date:weekDates[idx], time:tm?hm(tm):"", title:isMatch?rest:("אימון"+(rest?" – "+rest:"")), notes:[]};
+      continue;
+    }
+    if(!cur) continue;
+    let m;
+    if((m=line.match(/שעת הגעה\s*(\d{1,2}):(\d{2})/))){ cur.time=hm([null,m[1],m[2]]); continue; }
+    if((m=line.match(/(תחילת משחק|שריקת פתיחה|פתיחה)\s*(\d{1,2}):(\d{2})/))){ cur.notes.push("פתיחה "+hm([null,m[2],m[3]])); continue; }
+    if(hasPin){ cur.title+=" – "+line; continue; }
+    if((m=line.match(/הגעה במדים\s+(\S+)/))){ cur.notes.push("מדים "+m[1]); continue; }
+    if((m=line.match(/מדים\s+(\S+)\s+בתיק/))){ cur.notes.push(m[1]+" בתיק"); continue; }
+    if(/^הגעה\s/.test(line)){ cur.notes.push(line); continue; }
+    if(/שבת שלום/.test(line)) { finish(); cur=null; }
+  }
+  finish();
+  return out.filter(s=>s.date);
+}
+
+
+(function(){
+  const DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+  const $=id=>document.getElementById(id);
+  let families=[], groups=[], sessions=[], loaded=false;
+  let me=""; try{me=localStorage.getItem("myFamily")||""}catch(e){}
+
+  const pad=n=>String(n).padStart(2,"0");
+  const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const parseISO=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+  const sunday=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-x.getDay());return x};
+  const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+  const today=new Date();
+  let week=sunday(today); if(today.getDay()>=5) week=addDays(week,7);
+  const fmt=d=>d.getDate()+"."+(d.getMonth()+1);
+  const plusMin=(t,mins)=>{if(!/^\d{1,2}:\d{2}$/.test(t||""))return "";const [h,m]=t.split(":").map(Number);const x=h*60+m+mins;return pad(Math.floor(x/60)%24)+":"+pad(x%60)};
+  const backTime=s=>plusMin(s.time,/משחק/.test(s.title||"")?150:90);
+  const weekOf=dateISO=>iso(sunday(parseISO(dateISO)));
+  const isPast=s=>s.date<iso(new Date()); // days that already passed are not counted as missing
+
+  // ---- server ----
+  async function load(){
+    try{
+      const r=await fetch("/api/state",{cache:"no-store"}); const j=await r.json();
+      if(j.error){$("statusTxt").textContent=j.error==="no_db"?"צריך לחבר מסד נתונים ב-Vercel (Storage)":"שגיאה בטעינה";return}
+      families=j.config.families||[]; groups=j.config.groups||[]; sessions=j.sessions||[]; loaded=true;
+      renderFam();
+      if(!busy) render();
+    }catch(e){$("statusTxt").textContent="אין חיבור, מנסה שוב…"}
+  }
+  let busy=false;
+  async function post(body){
+    busy=true;
+    try{const r=await fetch("/api/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      if(!r.ok) throw new Error(r.status);}
+    finally{busy=false}
+    await load();
+  }
+  setInterval(()=>{if(document.visibilityState==="visible")load()},5000);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
+
+  function weekLabel(){
+    const end=addDays(week,6);
+    const cur=iso(sunday(today))===iso(week), nxt=iso(addDays(sunday(today),7))===iso(week);
+    $("weeklabel").innerHTML="";
+    const t=document.createElement("div"); t.textContent=cur?"השבוע":nxt?"השבוע הבא":"שבוע";
+    const s=document.createElement("small"); s.textContent=fmt(week)+" – "+fmt(end);
+    $("weeklabel").append(t,s);
+  }
+  $("prev").onclick=()=>{week=addDays(week,-7);$("mDate").value=iso(week);render()};
+  $("next").onclick=()=>{week=addDays(week,7);$("mDate").value=iso(week);render()};
+
+  function renderMe(){
+    const sel=$("meSel"); sel.innerHTML="";
+    const o=document.createElement("option");o.value="";o.textContent="לבחור את השם שלי";sel.append(o);
+    families.forEach(f=>{const x=document.createElement("option");x.value=f;x.textContent=f;sel.append(x)});
+    sel.value=families.includes(me)?me:"";
+    $("meHint").textContent=sel.value?"":"כדי לשבץ את עצמך בלחיצה";
+  }
+  $("meSel").onchange=e=>{me=e.target.value;try{localStorage.setItem("myFamily",me)}catch(_){ }render()};
+
+  const weekSessions=()=>{const w=iso(week);return sessions.filter(s=>(s.week||weekOf(s.date))===w).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))};
+
+  function render(){
+    weekLabel(); renderMe();
+    const list=$("list"); list.innerHTML="";
+    const ws=weekSessions();
+    let missing=0; const counts={}; families.forEach(f=>counts[f]=0);
+    ws.forEach(s=>["there","back"].forEach(k=>{if(!s[k]){if(!isPast(s))missing++}else if(counts[s[k]]!==undefined)counts[s[k]]++;}));
+    if(loaded&&!ws.length) list.innerHTML='<div class="empty-state">עוד אין אימונים בשבוע הזה. מדביקים את ההודעה של המאמן למטה.</div>';
+    ws.forEach(s=>list.append(sessionCard(s)));
+    const sb=$("statusbar");
+    sb.classList.toggle("missing",missing>0); sb.classList.toggle("done",ws.length>0&&missing===0);
+    $("missingCount").textContent=ws.length?missing:"–";
+    if(loaded) $("statusTxt").textContent=!ws.length?"אין אימונים בשבוע הזה":missing?(missing===1?"נסיעה אחת עוד בלי נהג":missing+" נסיעות עוד בלי נהג"):"כל הנסיעות מסודרות 👌";
+    $("jump").hidden=!missing;
+    $("share").hidden=!ws.length;
+    if(ws.length) $("waBtn").href="https://api.whatsapp.com/send?text="+encodeURIComponent(waText());
+    const fair=$("fair"); fair.innerHTML="";
+    if(ws.length){
+      const rows=groups.length?groups.map(g=>["משפחת "+g.name,(g.members||[]).reduce((a,m)=>a+(counts[m]||0),0)]):families.map(f=>[f,counts[f]]);
+      rows.forEach(([n,c])=>{const sp=document.createElement("span");sp.textContent=n+": ";const b=document.createElement("b");b.textContent=c;sp.append(b);fair.append(sp)});
+    }
+  }
+
+  function sessionCard(s){
+    const d=parseISO(s.date);
+    const card=document.createElement("article"); card.className="session"+(isPast(s)?" past":""); card.id="s-"+s.id;
+    const head=document.createElement("div"); head.className="shead";
+    const day=document.createElement("div"); day.className="day";
+    const b1=document.createElement("b"); b1.textContent=DAYS[d.getDay()];
+    const sm=document.createElement("small"); sm.textContent=fmt(d); day.append(b1,sm);
+    const info=document.createElement("div"); info.className="sinfo";
+    const t=document.createElement("div"); t.className="stitle"; t.textContent=s.title||"אימון"; info.append(t);
+    if(s.note){const n=document.createElement("div");n.className="snote";n.textContent=s.note;info.append(n)}
+    const del=document.createElement("button"); del.className="del"; del.textContent="🗑"; del.setAttribute("aria-label","למחוק את האימון");
+    del.onclick=async()=>{if(!confirm("למחוק את "+(s.title||"האימון")+" ביום "+DAYS[d.getDay()]+"?"))return;try{await post({action:"delete",id:s.id})}catch(e){alert("לא נמחק, כדאי לנסות שוב")}};
+    head.append(day,info,del);
+    const legs=document.createElement("div"); legs.className="legs";
+    legs.append(leg(s,"there","הלוך",s.time||""), leg(s,"back","חזור",backTime(s)));
+    card.append(head,legs); return card;
+  }
+
+  function leg(s,key,label,time){
+    const row=document.createElement("div"); row.className="leg"; row.id="l-"+s.id+"-"+key;
+    const l=document.createElement("div"); l.className="leglabel";
+    const b=document.createElement("b"); b.textContent=label; l.append(b);
+    if(time) l.append(document.createTextNode(time));
+    const val=s[key]||"";
+    const slot=document.createElement("div"); slot.className="slot "+(val?"filled":"empty")+(val&&val===me?" mine":"");
+    const sel=document.createElement("select"); sel.setAttribute("aria-label",label+" – מי מסיע");
+    const o=document.createElement("option");o.value="";o.textContent=isPast(s)?"—":"חסר נהג";sel.append(o);
+    const opts=families.slice(); if(val&&!opts.includes(val)) opts.push(val);
+    opts.forEach(f=>{const x=document.createElement("option");x.value=f;x.textContent=f;sel.append(x)});
+    sel.value=val; sel.onchange=()=>assign(s,key,sel.value);
+    slot.append(sel);
+    if(!val&&me&&!isPast(s)){const tk=document.createElement("button");tk.className="take";tk.textContent="אני";tk.onclick=()=>assign(s,key,me);slot.append(tk)}
+    row.append(l,slot); return row;
+  }
+
+  async function assign(s,key,value){
+    s[key]=value; render(); // optimistic
+    try{await post({action:"assign",id:s.id,key,value})}catch(e){alert("השיבוץ לא נשמר, כדאי לנסות שוב");load()}
+  }
+
+  let jumpIdx=0;
+  $("jump").onclick=()=>{
+    const miss=[]; weekSessions().filter(s=>!isPast(s)).forEach(s=>["there","back"].forEach(k=>{if(!s[k])miss.push("l-"+s.id+"-"+k)}));
+    if(!miss.length)return;
+    const el=$(miss[jumpIdx%miss.length]); jumpIdx++; if(!el)return;
+    const y=el.getBoundingClientRect().top+window.scrollY-window.innerHeight/3;
+    window.scrollTo({top:Math.max(0,y),behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+    const b=el.querySelector(".take")||el.querySelector("select"); if(b) setTimeout(()=>b.focus({preventScroll:true}),400);
+    $("jump").textContent=miss.length>1?"לחסר הבא":"להשלים";
+  };
+
+  function waText(){
+    const ws=weekSessions().filter(s=>!isPast(s)); const end=addDays(week,6);
+    const lines=["*הסעות לכדורגל ⚽ "+fmt(week)+"–"+fmt(end)+"*",""]; let miss=0;
+    ws.forEach(s=>{
+      const d=parseISO(s.date);
+      lines.push("*יום "+DAYS[d.getDay()]+" "+fmt(d)+"* – "+(s.title||"אימון"));
+      if(!s.there)miss++; if(!s.back)miss++;
+      lines.push(s.there?("🚗 הלוך "+(s.time||"")+": "+s.there):("🔴 *הלוך "+(s.time||"")+": חסר נהג!*"));
+      lines.push(s.back?("🏠 חזור "+backTime(s)+": "+s.back):("🔴 *חזור "+backTime(s)+": חסר נהג!*"));
+      lines.push("");
+    });
+    lines.push(miss?("🚨🔴 *חסרים "+miss+" נהגים – מי יכול לקחת?* 🔴🚨"):"✅ כל הנסיעות מסודרות");
+    lines.push("לשיבוץ: "+location.origin);
+    return lines.join("\n");
+  }
+  $("waBtn").addEventListener("click",()=>{$("waBtn").href="https://api.whatsapp.com/send?text="+encodeURIComponent(waText())});
+  async function copyText(){
+    const t=waText(); let ok=false;
+    try{await navigator.clipboard.writeText(t);ok=true}catch(e){
+      const ta=document.createElement("textarea");ta.value=t;document.body.append(ta);ta.select();
+      try{ok=document.execCommand("copy")}catch(_){ } ta.remove();
+    }
+    const b=$("copyBtn"); b.textContent=ok?"הועתק ✓":"לא הועתק"; setTimeout(()=>b.textContent="העתקה",2000);
+  }
+  $("copyBtn").onclick=copyText;
+
+  // ---- add ----
+  $("mDate").value=iso(week);
+  $("addBtn").onclick=async()=>{
+    const date=$("mDate").value; if(!date){$("addMsg").textContent="חסר תאריך";return}
+    try{await post({action:"add",sessions:[{date,week:weekOf(date),time:$("mTime").value,title:$("mTitle").value.trim(),note:$("mNote").value.trim()}]});
+      $("addMsg").textContent="נוסף ✓"; $("mTitle").value=$("mNote").value="";}
+    catch(e){$("addMsg").textContent="לא נוסף, כדאי לנסות שוב"}
+  };
+  $("parseBtn").onclick=async()=>{
+    const text=$("coachText").value.trim(), msg=$("parseMsg"); msg.className="msg";
+    if(!text){msg.textContent="קודם מדביקים את ההודעה";return}
+    const dates=[0,1,2,3,4,5,6].map(i=>iso(addDays(week,i)));
+    const found=parseCoach(text,dates);
+    if(!found.length){msg.className="msg err";msg.textContent="לא מצאתי ימים בהודעה (צריך שורות כמו „יום ראשון - 17:00”). אפשר להוסיף ידנית.";return}
+    const existing=new Set(sessions.map(s=>s.date+"|"+s.time));
+    const fresh=found.filter(o=>!existing.has(o.date+"|"+o.time)).map(o=>Object.assign(o,{week:iso(week)}));
+    try{ if(fresh.length) await post({action:"add",sessions:fresh});
+      msg.textContent="נוספו "+fresh.length+(found.length>fresh.length?" ("+(found.length-fresh.length)+" כבר היו בלוח)":"")+" ✓";
+      if(fresh.length) $("coachText").value="";
+    }catch(e){msg.className="msg err";msg.textContent="לא נשמר, כדאי לנסות שוב"}
+  };
+
+  // ---- parents ----
+  let famDirty=false;
+  const familyOf=n=>{const g=groups.find(g=>(g.members||[]).includes(n));return g?g.name:""};
+  function famRow(name,fam){
+    const r=document.createElement("div"); r.className="famrow";
+    const n=document.createElement("input"); n.placeholder="שם ההורה"; n.value=name;
+    const g=document.createElement("input"); g.placeholder="משפחה"; g.value=fam;
+    const x=document.createElement("button"); x.className="x"; x.textContent="✕"; x.setAttribute("aria-label","להסיר מהרשימה");
+    n.oninput=g.oninput=()=>{famDirty=true;$("famMsg").textContent="יש שינויים שלא נשמרו"};
+    x.onclick=()=>{r.remove();famDirty=true;$("famMsg").textContent="יש שינויים שלא נשמרו"};
+    r.append(n,g,x); return r;
+  }
+  function renderFam(){
+    if(famDirty) return;
+    const box=$("famList"); box.innerHTML="";
+    families.forEach(f=>box.append(famRow(f,familyOf(f))));
+  }
+  $("famAdd").onclick=()=>{famDirty=true;const r=famRow("","");$("famList").append(r);r.querySelector("input").focus()};
+  $("famSave").onclick=async()=>{
+    const rows=[...document.querySelectorAll("#famList .famrow")].map(r=>[r.children[0].value.trim(),r.children[1].value.trim()]).filter(r=>r[0]);
+    const list=rows.map(r=>r[0]); const gs=[];
+    rows.forEach(([n,f])=>{if(!f)return;let g=gs.find(x=>x.name===f);if(!g){g={name:f,members:[]};gs.push(g)}g.members.push(n)});
+    try{await post({action:"config",families:list,groups:gs});famDirty=false;renderFam();$("famMsg").textContent="נשמר ✓"}
+    catch(e){$("famMsg").textContent="לא נשמר, כדאי לנסות שוב"}
+  };
+
+  render(); load();
+})();
+</script>
+</body>
+</html>
