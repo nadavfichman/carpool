@@ -40,7 +40,6 @@ button{cursor:pointer}
 header.top{
   background:var(--pitch);color:var(--chalk);padding:18px 18px 22px;position:relative;overflow:hidden;
 }
-/* chalk centre-circle */
 header.top::after{content:"";position:absolute;width:220px;height:220px;border:2px solid rgba(255,255,255,.18);border-radius:50%;left:-70px;top:-40px;pointer-events:none}
 header.top::before{content:"";position:absolute;left:40px;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.18);pointer-events:none}
 .wrap{max-width:640px;margin:0 auto;padding:0 14px}
@@ -67,9 +66,6 @@ h1{margin:0;font-size:1.6rem;font-weight:800;letter-spacing:-.01em}
 .fair b{font-weight:700}
 
 .session{background:var(--card);border:1px solid var(--line);border-radius:18px;margin:14px 0;overflow:hidden;scroll-margin-top:20px}
-.session.flash{animation:flash 1.2s ease}
-@keyframes flash{0%{box-shadow:0 0 0 4px var(--missing)}100%{box-shadow:0 0 0 0 transparent}}
-@media (prefers-reduced-motion:reduce){.session.flash{animation:none;box-shadow:0 0 0 3px var(--missing)}}
 .shead{display:flex;gap:12px;padding:12px 14px;align-items:flex-start}
 .day{background:var(--pitch);color:var(--chalk);border-radius:12px;min-width:58px;text-align:center;padding:6px 4px;line-height:1.15}
 .day b{display:block;font-size:1.05rem}
@@ -112,6 +108,8 @@ footer{height:40px}
 @keyframes flashleg{0%,60%{background:var(--missing-bg);box-shadow:inset 0 0 0 3px var(--missing)}100%{background:transparent;box-shadow:none}}
 @media (prefers-reduced-motion:reduce){.leg.flash{animation:none;background:var(--missing-bg)}}
 .share .btn{flex:0 0 auto}
+.session.past{opacity:.5}
+.session.past .slot.empty select{border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:500}
 </style>
 </head>
 <body>
@@ -225,6 +223,7 @@ function parseCoach(text, weekDates){
   const plusMin=(t,mins)=>{if(!/^\d{1,2}:\d{2}$/.test(t||""))return "";const [h,m]=t.split(":").map(Number);const x=h*60+m+mins;return pad(Math.floor(x/60)%24)+":"+pad(x%60)};
   const backTime=s=>plusMin(s.time,/משחק/.test(s.title||"")?150:90);
   const weekOf=dateISO=>iso(sunday(parseISO(dateISO)));
+  const isPast=s=>s.date<iso(new Date());
 
   async function load(){
     try{
@@ -273,7 +272,7 @@ function parseCoach(text, weekDates){
     const list=$("list"); list.innerHTML="";
     const ws=weekSessions();
     let missing=0; const counts={}; families.forEach(f=>counts[f]=0);
-    ws.forEach(s=>["there","back"].forEach(k=>{if(!s[k])missing++;else if(counts[s[k]]!==undefined)counts[s[k]]++;}));
+    ws.forEach(s=>["there","back"].forEach(k=>{if(!s[k]){if(!isPast(s))missing++}else if(counts[s[k]]!==undefined)counts[s[k]]++;}));
     if(loaded&&!ws.length) list.innerHTML='<div class="empty-state">עוד אין אימונים בשבוע הזה. מדביקים את ההודעה של המאמן למטה.</div>';
     ws.forEach(s=>list.append(sessionCard(s)));
     const sb=$("statusbar");
@@ -292,7 +291,7 @@ function parseCoach(text, weekDates){
 
   function sessionCard(s){
     const d=parseISO(s.date);
-    const card=document.createElement("article"); card.className="session"; card.id="s-"+s.id;
+    const card=document.createElement("article"); card.className="session"+(isPast(s)?" past":""); card.id="s-"+s.id;
     const head=document.createElement("div"); head.className="shead";
     const day=document.createElement("div"); day.className="day";
     const b1=document.createElement("b"); b1.textContent=DAYS[d.getDay()];
@@ -316,12 +315,12 @@ function parseCoach(text, weekDates){
     const val=s[key]||"";
     const slot=document.createElement("div"); slot.className="slot "+(val?"filled":"empty")+(val&&val===me?" mine":"");
     const sel=document.createElement("select"); sel.setAttribute("aria-label",label+" – מי מסיע");
-    const o=document.createElement("option");o.value="";o.textContent="חסר נהג";sel.append(o);
+    const o=document.createElement("option");o.value="";o.textContent=isPast(s)?"—":"חסר נהג";sel.append(o);
     const opts=families.slice(); if(val&&!opts.includes(val)) opts.push(val);
     opts.forEach(f=>{const x=document.createElement("option");x.value=f;x.textContent=f;sel.append(x)});
     sel.value=val; sel.onchange=()=>assign(s,key,sel.value);
     slot.append(sel);
-    if(!val&&me){const tk=document.createElement("button");tk.className="take";tk.textContent="אני";tk.onclick=()=>assign(s,key,me);slot.append(tk)}
+    if(!val&&me&&!isPast(s)){const tk=document.createElement("button");tk.className="take";tk.textContent="אני";tk.onclick=()=>assign(s,key,me);slot.append(tk)}
     row.append(l,slot); return row;
   }
 
@@ -332,7 +331,7 @@ function parseCoach(text, weekDates){
 
   let jumpIdx=0;
   $("jump").onclick=()=>{
-    const miss=[]; weekSessions().forEach(s=>["there","back"].forEach(k=>{if(!s[k])miss.push("l-"+s.id+"-"+k)}));
+    const miss=[]; weekSessions().filter(s=>!isPast(s)).forEach(s=>["there","back"].forEach(k=>{if(!s[k])miss.push("l-"+s.id+"-"+k)}));
     if(!miss.length)return;
     const el=$(miss[jumpIdx%miss.length]); jumpIdx++; if(!el)return;
     const y=el.getBoundingClientRect().top+window.scrollY-window.innerHeight/3;
@@ -343,7 +342,7 @@ function parseCoach(text, weekDates){
   };
 
   function waText(){
-    const ws=weekSessions(); const end=addDays(week,6);
+    const ws=weekSessions().filter(s=>!isPast(s)); const end=addDays(week,6);
     const lines=["*הסעות לכדורגל ⚽ "+fmt(week)+"–"+fmt(end)+"*",""]; let miss=0;
     ws.forEach(s=>{
       const d=parseISO(s.date);
