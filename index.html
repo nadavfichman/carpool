@@ -100,7 +100,9 @@ textarea{min-height:120px;resize:vertical}
 .msg{font-size:.9rem;margin-top:8px;color:var(--muted)}
 .msg.err{color:var(--danger)}
 details.panel summary{font-weight:700;cursor:pointer}
-.famgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.famrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,7rem) 44px;gap:8px;margin-top:8px;align-items:center}
+.famrow input{min-width:0}
+.famrow .x{border:1px solid var(--line);background:transparent;color:var(--danger);border-radius:12px;height:44px;font-size:1.1rem}
 footer{height:40px}
 .share{display:flex;gap:8px;margin-top:12px}
 .share .wa{flex:1;border:0;border-radius:12px;padding:11px 14px;font-weight:700;background:#25D366;color:#0b2a17;text-align:center;text-decoration:none;display:block}
@@ -159,13 +161,9 @@ footer{height:40px}
 
   <details class="panel" id="famPanel">
     <summary>ההורים בהסעה</summary>
-    <div class="famgrid">
-      <input id="f0" placeholder="הורה 1"><input id="f1" placeholder="הורה 2">
-      <input id="f2" placeholder="הורה 3"><input id="f3" placeholder="הורה 4">
-      <input id="f4" placeholder="הורה 5"><input id="f5" placeholder="הורה 6">
-      <input id="f6" placeholder="הורה 7"><input id="f7" placeholder="הורה 8">
-    </div>
-    <div class="row"><button class="btn" id="famSave">לשמור הורים</button></div>
+    <p>מימין שם ההורה, משמאל שם המשפחה (לספירה לפי משפחות). ✕ מסיר מהרשימה.</p>
+    <div id="famList"></div>
+    <div class="row"><button class="btn ghost" id="famAdd">+ הוספת הורה</button><button class="btn" id="famSave">לשמור הורים</button></div>
     <div class="msg" id="famMsg"></div>
   </details>
 </main>
@@ -230,7 +228,7 @@ function parseCoach(text, weekDates){
       const r=await fetch("/api/state",{cache:"no-store"}); const j=await r.json();
       if(j.error){$("statusTxt").textContent=j.error==="no_db"?"צריך לחבר מסד נתונים ב-Vercel (Storage)":"שגיאה בטעינה";return}
       families=j.config.families||[]; groups=j.config.groups||[]; sessions=j.sessions||[]; loaded=true;
-      [0,1,2,3,4,5,6,7].forEach(i=>{if(document.activeElement!==$("f"+i))$("f"+i).value=families[i]||""});
+      renderFam();
       if(!busy) render();
     }catch(e){$("statusTxt").textContent="אין חיבור, מנסה שוב…"}
   }
@@ -291,111 +289,4 @@ function parseCoach(text, weekDates){
 
   function sessionCard(s){
     const d=parseISO(s.date);
-    const card=document.createElement("article"); card.className="session"+(isPast(s)?" past":""); card.id="s-"+s.id;
-    const head=document.createElement("div"); head.className="shead";
-    const day=document.createElement("div"); day.className="day";
-    const b1=document.createElement("b"); b1.textContent=DAYS[d.getDay()];
-    const sm=document.createElement("small"); sm.textContent=fmt(d); day.append(b1,sm);
-    const info=document.createElement("div"); info.className="sinfo";
-    const t=document.createElement("div"); t.className="stitle"; t.textContent=s.title||"אימון"; info.append(t);
-    if(s.note){const n=document.createElement("div");n.className="snote";n.textContent=s.note;info.append(n)}
-    const del=document.createElement("button"); del.className="del"; del.textContent="🗑"; del.setAttribute("aria-label","למחוק את האימון");
-    del.onclick=async()=>{if(!confirm("למחוק את "+(s.title||"האימון")+" ביום "+DAYS[d.getDay()]+"?"))return;try{await post({action:"delete",id:s.id})}catch(e){alert("לא נמחק, כדאי לנסות שוב")}};
-    head.append(day,info,del);
-    const legs=document.createElement("div"); legs.className="legs";
-    legs.append(leg(s,"there","הלוך",s.time||""), leg(s,"back","חזור",backTime(s)));
-    card.append(head,legs); return card;
-  }
-
-  function leg(s,key,label,time){
-    const row=document.createElement("div"); row.className="leg"; row.id="l-"+s.id+"-"+key;
-    const l=document.createElement("div"); l.className="leglabel";
-    const b=document.createElement("b"); b.textContent=label; l.append(b);
-    if(time) l.append(document.createTextNode(time));
-    const val=s[key]||"";
-    const slot=document.createElement("div"); slot.className="slot "+(val?"filled":"empty")+(val&&val===me?" mine":"");
-    const sel=document.createElement("select"); sel.setAttribute("aria-label",label+" – מי מסיע");
-    const o=document.createElement("option");o.value="";o.textContent=isPast(s)?"—":"חסר נהג";sel.append(o);
-    const opts=families.slice(); if(val&&!opts.includes(val)) opts.push(val);
-    opts.forEach(f=>{const x=document.createElement("option");x.value=f;x.textContent=f;sel.append(x)});
-    sel.value=val; sel.onchange=()=>assign(s,key,sel.value);
-    slot.append(sel);
-    if(!val&&me&&!isPast(s)){const tk=document.createElement("button");tk.className="take";tk.textContent="אני";tk.onclick=()=>assign(s,key,me);slot.append(tk)}
-    row.append(l,slot); return row;
-  }
-
-  async function assign(s,key,value){
-    s[key]=value; render();
-    try{await post({action:"assign",id:s.id,key,value})}catch(e){alert("השיבוץ לא נשמר, כדאי לנסות שוב");load()}
-  }
-
-  let jumpIdx=0;
-  $("jump").onclick=()=>{
-    const miss=[]; weekSessions().filter(s=>!isPast(s)).forEach(s=>["there","back"].forEach(k=>{if(!s[k])miss.push("l-"+s.id+"-"+k)}));
-    if(!miss.length)return;
-    const el=$(miss[jumpIdx%miss.length]); jumpIdx++; if(!el)return;
-    const y=el.getBoundingClientRect().top+window.scrollY-window.innerHeight/3;
-    window.scrollTo({top:Math.max(0,y),behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
-    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
-    const b=el.querySelector(".take")||el.querySelector("select"); if(b) setTimeout(()=>b.focus({preventScroll:true}),400);
-    $("jump").textContent=miss.length>1?"לחסר הבא":"להשלים";
-  };
-
-  function waText(){
-    const ws=weekSessions().filter(s=>!isPast(s)); const end=addDays(week,6);
-    const lines=["*הסעות לכדורגל ⚽ "+fmt(week)+"–"+fmt(end)+"*",""]; let miss=0;
-    ws.forEach(s=>{
-      const d=parseISO(s.date);
-      lines.push("*יום "+DAYS[d.getDay()]+" "+fmt(d)+"* – "+(s.title||"אימון"));
-      if(!s.there)miss++; if(!s.back)miss++;
-      lines.push(s.there?("🚗 הלוך "+(s.time||"")+": "+s.there):("🔴 *הלוך "+(s.time||"")+": חסר נהג!*"));
-      lines.push(s.back?("🏠 חזור "+backTime(s)+": "+s.back):("🔴 *חזור "+backTime(s)+": חסר נהג!*"));
-      lines.push("");
-    });
-    lines.push(miss?("🚨🔴 *חסרים "+miss+" נהגים – מי יכול לקחת?* 🔴🚨"):"✅ כל הנסיעות מסודרות");
-    lines.push("לשיבוץ: "+location.origin);
-    return lines.join("\n");
-  }
-  $("waBtn").addEventListener("click",()=>{$("waBtn").href="https://api.whatsapp.com/send?text="+encodeURIComponent(waText())});
-  async function copyText(){
-    const t=waText(); let ok=false;
-    try{await navigator.clipboard.writeText(t);ok=true}catch(e){
-      const ta=document.createElement("textarea");ta.value=t;document.body.append(ta);ta.select();
-      try{ok=document.execCommand("copy")}catch(_){ } ta.remove();
-    }
-    const b=$("copyBtn"); b.textContent=ok?"הועתק ✓":"לא הועתק"; setTimeout(()=>b.textContent="העתקה",2000);
-  }
-  $("copyBtn").onclick=copyText;
-
-  $("mDate").value=iso(week);
-  $("addBtn").onclick=async()=>{
-    const date=$("mDate").value; if(!date){$("addMsg").textContent="חסר תאריך";return}
-    try{await post({action:"add",sessions:[{date,week:weekOf(date),time:$("mTime").value,title:$("mTitle").value.trim(),note:$("mNote").value.trim()}]});
-      $("addMsg").textContent="נוסף ✓"; $("mTitle").value=$("mNote").value="";}
-    catch(e){$("addMsg").textContent="לא נוסף, כדאי לנסות שוב"}
-  };
-  $("parseBtn").onclick=async()=>{
-    const text=$("coachText").value.trim(), msg=$("parseMsg"); msg.className="msg";
-    if(!text){msg.textContent="קודם מדביקים את ההודעה";return}
-    const dates=[0,1,2,3,4,5,6].map(i=>iso(addDays(week,i)));
-    const found=parseCoach(text,dates);
-    if(!found.length){msg.className="msg err";msg.textContent="לא מצאתי ימים בהודעה (צריך שורות כמו „יום ראשון - 17:00”). אפשר להוסיף ידנית.";return}
-    const existing=new Set(sessions.map(s=>s.date+"|"+s.time));
-    const fresh=found.filter(o=>!existing.has(o.date+"|"+o.time)).map(o=>Object.assign(o,{week:iso(week)}));
-    try{ if(fresh.length) await post({action:"add",sessions:fresh});
-      msg.textContent="נוספו "+fresh.length+(found.length>fresh.length?" ("+(found.length-fresh.length)+" כבר היו בלוח)":"")+" ✓";
-      if(fresh.length) $("coachText").value="";
-    }catch(e){msg.className="msg err";msg.textContent="לא נשמר, כדאי לנסות שוב"}
-  };
-
-  $("famSave").onclick=async()=>{
-    const list=[0,1,2,3,4,5,6,7].map(i=>$("f"+i).value.trim()).filter(Boolean);
-    try{await post({action:"config",families:list,groups});$("famMsg").textContent="נשמר ✓"}
-    catch(e){$("famMsg").textContent="לא נשמר"}
-  };
-
-  render(); load();
-})();
-</script>
-</body>
-</html>
+    con
