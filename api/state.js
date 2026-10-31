@@ -43,6 +43,13 @@ module.exports = async (req, res) => {
       await redis(["HSET","sessions",s.id,JSON.stringify(s)]);
       return res.status(200).json({ok:true});
     }
+    if (b.action === "remark") {
+      const raw = await redis(["HGET","sessions",clean(b.id,40)]);
+      if (!raw) return res.status(404).json({error:"not_found"});
+      const s = JSON.parse(raw); s.remark = clean(b.value,150).trim();
+      await redis(["HSET","sessions",s.id,JSON.stringify(s)]);
+      return res.status(200).json({ok:true});
+    }
     if (b.action === "add") {
       const list = Array.isArray(b.sessions) ? b.sessions.slice(0,20) : [];
       for (const o of list) {
